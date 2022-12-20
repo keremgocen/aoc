@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -56,7 +56,7 @@ func (s *Stack[T]) CutN(n int) (T, bool) {
 func main() {
 	readFile, err := os.Open("part2.txt")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	fileScanner := bufio.NewScanner(readFile)
@@ -69,7 +69,7 @@ func main() {
 
 		if stacks == nil {
 			stacks = make([]Stack[string], (len(input)+1)/4)
-			fmt.Println("len stacks", len(stacks))
+			log.Println("len stacks", len(stacks))
 		}
 
 		re := regexp.MustCompile(`\[[A-Z]\]`)
@@ -78,44 +78,42 @@ func main() {
 			inputs := re.FindAllStringIndex(input, -1)
 			for k, v := range inputs {
 				val := input[v[0]:v[1]]
-				fmt.Println("k, v", k, v, val, v[0]/4)
+				log.Println("k, v", k, v, val, v[0]/4)
 				stackIdx := v[0] / 4
 				stacks[stackIdx].PushBack(val)
 			}
-			fmt.Println("stacks", stacks)
+			log.Println("stacks", stacks)
 		} else {
 			inputs := strings.Split(input, " ")
 			if inputs[0] == "move" {
 				move, _ := strconv.Atoi(inputs[1])
 				from, _ := strconv.Atoi(inputs[3])
-				from -= 1
+				from--
 				to, _ := strconv.Atoi(inputs[5])
-				to -= 1
-				fmt.Println("move", move, "-from-", from, "-to-", to)
+				to--
+				log.Println("move", move, "-from-", from, "-to-", to)
 				for i := 0; i < move; i++ {
 					var val string
 					if i < move-1 {
-						fmt.Println("popping N", i)
+						log.Println("popping N", i)
 						val, _ = stacks[from].CutN(move - 1 - i)
 					} else {
-						fmt.Println("just pop", i)
+						log.Println("just pop", i)
 						val, _ = stacks[from].Pop()
 					}
-					fmt.Println("moving", val, "from", from, "to", to)
+					log.Println("moving", val, "from", from, "to", to)
 					stacks[to].Push(val)
 				}
-				fmt.Println("stacks", stacks)
-			} else {
-				fmt.Println("skip", input)
+				log.Println("stacks", stacks)
 			}
 		}
 	}
 
-	fmt.Println("tops of stacks")
+	log.Println("tops of stacks")
 
 	for _, s := range stacks {
 		v, _ := s.Pop()
-		fmt.Printf("%v", string(v[1]))
+		log.Printf("%v", string(v[1]))
 	}
 
 	readFile.Close()

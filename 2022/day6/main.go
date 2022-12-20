@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"log"
 	"os"
 )
 
 func main() {
 	readFile, err := os.Open("part2.txt")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	fileScanner := bufio.NewScanner(readFile)
@@ -19,24 +19,24 @@ func main() {
 		input := fileScanner.Text()
 
 		idx := findEndOfMarkerIdx(input)
-		fmt.Println("idx", idx)
+		log.Println("idx", idx)
 	}
 
 	readFile.Close()
 }
 
 func findEndOfMarkerIdx(input string) int {
-	fmt.Println("input", input)
+	log.Println("input", input)
 	start := 0
 	for end := range input {
 		if end == start+14 {
 			// a b a d b c
 			// check if last 4 chars are different
-			fmt.Printf("check start:%d end:%d, str:%v\n", start, end, input[start:end])
+			log.Printf("check start:%d end:%d, str:%v\n", start, end, input[start:end])
 			if !hasRepeatingRune(input[start:end]) {
 				return end
 			}
-			start += 1
+			start++
 		}
 	}
 	return 0
@@ -48,7 +48,7 @@ func hasRepeatingRune(str string) bool {
 			if i == j {
 				continue
 			}
-			fmt.Println("checking", i, ":", str[i], "against", j, ":", str[j])
+			log.Println("checking", i, ":", str[i], "against", j, ":", str[j])
 			if str[i] == str[j] {
 				return true
 			}

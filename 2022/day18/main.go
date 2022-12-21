@@ -18,15 +18,51 @@ func main() {
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
 
-	cubes := make(map[string]int, 0)
+	cubes := make(map[string]bool, 0)
 
+	maxC := 0
 	for fileScanner.Scan() {
 		input := fileScanner.Text()
-		cubes[input] = 1
+		x, y, z := readCubeCoordinates(input)
+		maxC = max(x, y, z, maxC)
+		cubes[input] = true
+	}
+
+	// # Create a larger cube of "air cubes" which is every cube from
+	// # -1 to maxC in the x, y, and z direction that isn't a lava cube
+	// air_cubes = {}
+	airCubes := make(map[string]bool, 0)
+	minC := -1
+
+	for x := minC; x <= maxC; x++ {
+		for y := minC; y <= maxC; y++ {
+			for z := minC; z <= maxC; z++ {
+				cubeIndex := getCubeKeyFromCoords(x, y, z)
+				if _, ok := cubes[cubeIndex]; !ok {
+					airCubes[cubeIndex] = false
+				}
+			}
+		}
 	}
 
 	log.Println("cubes", cubes)
-	log.Println("surface area:", calculateSurfaceArea(cubes))
+
+	// # This stuff is for part 2, where we flood fill starting with a far corner
+	startCoord := "-1, -1, -1"
+	floodFill(startCoord, airCubes)
+	innerCubes := make(map[string]bool, 0)
+	for k, v := range airCubes {
+		if !v {
+			innerCubes[k] = false
+		}
+	}
+	innerCubesSurfaceArea := calculateSurfaceArea(innerCubes)
+
+	part1SurfaceArea := calculateSurfaceArea(cubes)
+	part2SurfaceArea := part1SurfaceArea - innerCubesSurfaceArea
+
+	log.Println("part 1 surface area:", part1SurfaceArea)
+	log.Println("part 2 surface area:", part2SurfaceArea)
 
 	// cubeGrid := initializeGrid(maxSize, cubes)
 	// log.Println("cubeGrid", cubeGrid)
@@ -41,7 +77,7 @@ func main() {
 	readFile.Close()
 }
 
-func calculateSurfaceArea(cubes map[string]int) int {
+func calculateSurfaceArea(cubes map[string]bool) int {
 	area := 0
 	for k := range cubes {
 		x, y, z := readCubeCoordinates(k)
@@ -73,7 +109,70 @@ func getCubeKeyFromCoords(x, y, z int) string {
 	return fmt.Sprintf("%d,%d,%d", x, y, z)
 }
 
+func floodFill(startCoords string, airCubes map[string]bool) {
+	// # Goes thru all cubes in air_c connected to start_c and "fills" them
+	// # Unfilled cubes are False, filled cubes are True
+
+	queue := make([]string, 0)
+	// # initialize queue with start coordinate
+	queue = append(queue, startCoords)
+
+	for len(queue) > 0 {
+		// # Pull from the front of the queue
+		coord := queue[0]
+		queue = queue[1:]
+		// # Set it to filled
+		airCubes[coord] = true
+		// # Find all its unfilled, non-lava neighbors and add to queue
+		x, y, z := readCubeCoordinates(coord)
+		directions := []string{
+			getCubeKeyFromCoords(x+1, y, z),
+			getCubeKeyFromCoords(x-1, y, z),
+			getCubeKeyFromCoords(x, y+1, z),
+			getCubeKeyFromCoords(x, y-1, z),
+			getCubeKeyFromCoords(x, y, z+1),
+			getCubeKeyFromCoords(x, y, z-1),
+		}
+
+		for _, d := range directions {
+			if isEmpty, ok := airCubes[d]; ok {
+				dInQueue := false
+				for _, val := range queue {
+					if val == d {
+						dInQueue = true
+					}
+				}
+				if !isEmpty && !dInQueue { // and d not in queue
+					queue = append(queue, d)
+				}
+			}
+		}
+	}
+}
+
 // source: https://github.com/hugseverycat/aoc2022/blob/1e879a8f374b915b12ac968e963bcaac4bac021b/day18.py
+// def flood_fill(start_c: tuple, air_c: dict):
+//     # Goes thru all cubes in air_c connected to start_c and "fills" them
+//     # Unfilled cubes are False, filled cubes are True
+
+//     queue = deque()
+//     # initialize queue with start coordinate
+//     queue.append(start_c)
+
+//     while queue:
+//         # Pull from the front of the queue
+//         coord = queue.popleft()
+//         # Set it to filled
+//         air_c[coord] = True
+//         # Find all its unfilled, non-lava neighbors and add to queue
+//         cx, cy, cz = coord
+//         directions = [(cx - 1, cy, cz), (cx + 1, cy, cz), (cx, cy + 1, cz),
+//                       (cx, cy - 1, cz), (cx, cy, cz + 1), (cx, cy, cz - 1)]
+
+//         for d in directions:
+//             if d in air_c and not air_c[d] and d not in queue:
+//                 queue.append(d)
+
 // def get_surface_area(cubes):
 //     # Takes an iterable of cubes and calculates its surface area
 //     s_area = 0
